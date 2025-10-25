@@ -66,16 +66,19 @@
 
     // Load GeoJSON
     let farmLayer;
-    fetch('data/farms_polygons.geojson')
+   fetch('data/ghana_farms_polygons.geojson')
       .then(res => res.json())
       .then(data => {
         farmLayer = L.geoJSON(data, {
-          style: feature => ({
-            color: '#2b2b2b',
-            weight: 1,
-            fillOpacity: 0.75,
-            fillColor: getCropColor(feature.properties.crop)
-          }),
+         style: function(feature) {
+  return {
+    color: '#222',           // thin dark border
+    weight: 0.8,
+    fillColor: cropColors[feature.properties.crop] || '#ccc',
+    fillOpacity: 0.6
+  };
+}
+,
           onEachFeature: (feature, layer) => {
             const p = feature.properties;
             layer.bindPopup(`
