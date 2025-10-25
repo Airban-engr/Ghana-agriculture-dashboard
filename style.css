@@ -1,0 +1,150 @@
+/* 🌿 Ghana Agriculture Dashboard Theme
+   Designed for: Victor Morton-Bruce
+   ----------------------------------- */
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Open Sans', sans-serif;
+  background: #f5f5f5;
+  color: #333;
+}
+
+/* Map container */
+#map {
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+}
+
+/* Sidebar styling */
+.sidebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100%;
+  background: linear-gradient(180deg, #2e7d32 0%, #81c784 100%);
+  color: #fff;
+  padding: 15px 20px;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+  transition: all 0.3s ease-in-out;
+  z-index: 1000;
+}
+
+.sidebar.collapsed {
+  transform: translateX(-260px);
+}
+
+.sidebar h2 {
+  font-family: 'Poppins', sans-serif;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.sidebar-header button {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.sidebar-header button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Filters section */
+.filters label {
+  display: block;
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+.filters select,
+.filters input[type="range"],
+.reset-btn {
+  width: 100%;
+  margin-top: 6px;
+  border: none;
+  border-radius: 5px;
+  padding: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.filters select,
+.filters input[type="range"] {
+  color: #333;
+}
+
+.reset-btn {
+  margin-top: 20px;
+  background-color: #fdd835;
+  color: #333;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.reset-btn:hover {
+  background-color: #ffeb3b;
+}
+
+/* Floating footer tag */
+#footer-tag {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 5px;
+  font-size: 13px;
+  z-index: 1100;
+}
+
+/* Leaflet controls adjustment */
+.leaflet-control-layers {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.leaflet-popup-content {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.leaflet-control-attribution {
+  display: none;
+}
+
+/* Responsive layout */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 240px;
+    padding: 10px 15px;
+  }
+
+  .sidebar.collapsed {
+    transform: translateX(-230px);
+  }
+
+  .sidebar h2 {
+    font-size: 18px;
+  }
+
+  #footer-tag {
+    font-size: 11px;
+  }
+}
