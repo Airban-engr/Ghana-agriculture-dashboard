@@ -67,8 +67,91 @@
     // Load GeoJSON
     let farmLayer;
    fetch('data/ghana_farms_polygons.geojson')
-      .then(res => res.json())
-      .then(data => {
+  .then(response => response.json())
+  .then(data => {
+    // Extract unique crop types and regions
+    const crops = [...new Set(data.features.map(f => f.properties.crop))];
+    const regions = [...new Set(data.features.map(f => f.properties.region))];
+
+    // Populate dropdowns dynamically
+    const cropSelect = document.getElementById('cropSelect');
+    const regionSelect = document.getElementById('regionSelect');
+
+    crops.forEach(crop => {
+      const option = document.createElement('option');
+      option.value = crop;
+      option.textContent = crop;
+      cropSelect.appendChild(option);
+    });
+
+    regions.forEach(region => {
+      const option = document.createElement('option');
+      option.value = region;
+      option.textContent = region;
+      regionSelect.appendChild(option);
+    });
+
+    // Define color mapping by crop type
+    const cropColors = {
+      "Maize": "#f9a825",
+      "Cassava": "#8bc34a",
+      "Cocoa": "#6d4c41",
+      "Rice": "#4fc3f7",
+      "Tomatoes": "#e53935"
+    };
+
+    // Add farms to the map
+    const farmsLayer = L.geoJSON(data, {
+      style: feature => ({
+        color: '#222',
+        weight: 0.8,
+        fillColor: cropColors[feature.properties.crop] || '#999',
+        fillOpacity: 0.6
+      }),
+      onEachFeature: (feature, layer) => {
+        const p = feature.properties;
+        layer.bindPopup(`
+          <strong>${p.farm_name}</strong><br>
+          Farmer: ${p.farmer}<br>
+          Crop: ${p.crop}<br>
+          Region: ${p.region}<br>
+          Area: ${p.area_ha} ha
+        `);
+      }
+    }).addTo(map);
+
+    // ✅ Auto-fit to all farms
+    map.fitBounds(farmsLayer.getBounds());
+
+    // Filtering logic
+    function applyFilters() {
+      const selectedCrop = cropSelect.value;
+      const selectedRegion = regionSelect.value;
+      const sizeThreshold = document.getElementById('sizeRange').value;
+
+      farmsLayer.eachLayer(layer => {
+        const p = layer.feature.properties;
+        const match =
+          (selectedCrop === "All Crops" || p.crop === selectedCrop) &&
+          (selectedRegion === "All Regions" || p.region === selectedRegion) &&
+          p.area_ha >= sizeThreshold;
+
+        layer.setStyle({ opacity: match ? 1 : 0, fillOpacity: match ? 0.6 : 0 });
+      });
+    }
+
+    // Event listeners
+    cropSelect.addEventListener('change', applyFilters);
+    regionSelect.addEventListener('change', applyFilters);
+    document.getElementById('sizeRange').addEventListener('input', applyFilters);
+    document.getElementById('resetFilters').addEventListener('click', () => {
+      cropSelect.value = "All Crops";
+      regionSelect.value = "All Regions";
+      document.getElementById('sizeRange').value = 0;
+      applyFilters();
+    });
+  });
+ {
         farmLayer = L.geoJSON(data, {
          style: function(feature) {
   return {
@@ -95,7 +178,7 @@
 
         populateFilters(data.features);
         attachFilterEvents(data.features);
-      });
+      };
 
     function getCropColor(crop) {
       const colors = {
