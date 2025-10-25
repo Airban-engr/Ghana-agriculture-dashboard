@@ -75,18 +75,23 @@ fetch('data/ashanti_farms_linear_cluster.geojson')
 
     // Extract unique crops and clusters dynamically
     const crops = [...new Set(data.features.map(f => f.properties.crop))];
-    const clusters = [...new Set(data.features.map(f => f.properties.cluster))];
-
-    // Populate dropdowns
-    const cropSelect = document.getElementById('cropSelect');
     const clusterSelect = document.getElementById('regionSelect');
 
-    crops.forEach(crop => {
-      const opt = document.createElement('option');
-      opt.value = crop;
-      opt.textContent = crop;
-      cropSelect.appendChild(opt);
-    });
+// Add default region (Ashanti)
+const defaultOpt = document.createElement('option');
+defaultOpt.value = "Ashanti Region";
+defaultOpt.textContent = "Ashanti Region";
+clusterSelect.appendChild(defaultOpt);
+
+// Add cluster zones (Ejisu, Offinso, Bekwai, Obuasi)
+const clusters = [...new Set(data.features.map(f => f.properties.cluster))];
+clusters.forEach(cluster => {
+  const opt = document.createElement('option');
+  opt.value = cluster;
+  opt.textContent = cluster;
+  clusterSelect.appendChild(opt);
+});
+
 
     clusters.forEach(cluster => {
       const opt = document.createElement('option');
@@ -133,7 +138,8 @@ fetch('data/ashanti_farms_linear_cluster.geojson')
         const p = layer.feature.properties;
         const match =
           (selectedCrop === "All Crops" || p.crop === selectedCrop) &&
-          (selectedCluster === "All Regions" || p.cluster === selectedCluster) &&
+          (selectedCluster === "Ashanti Region" || p.cluster === selectedCluster)
+ &&
           p.area_ha >= sizeThreshold;
 
         layer.setStyle({
