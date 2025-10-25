@@ -73,24 +73,36 @@ fetch('data/ashanti_farms_linear_cluster.geojson')
   .then(response => response.json())
   .then(data => {
 
-    // Extract unique crops and clusters dynamically
-    const crops = [...new Set(data.features.map(f => f.properties.crop))];
-    const clusterSelect = document.getElementById('regionSelect');
+    // === FIXED DROPDOWN POPULATION ===
+const cropSelect = document.getElementById('cropSelect');
+const clusterSelect = document.getElementById('regionSelect');
 
-// Add default region (Ashanti)
-const defaultOpt = document.createElement('option');
-defaultOpt.value = "Ashanti Region";
-defaultOpt.textContent = "Ashanti Region";
-clusterSelect.appendChild(defaultOpt);
+// Extract unique crops and clusters, ignoring empty/duplicate values
+const crops = [...new Set(data.features.map(f => f.properties.crop.trim()))];
+const clusters = [...new Set(data.features.map(f => f.properties.cluster.trim()))];
 
-// Add cluster zones (Ejisu, Offinso, Bekwai, Obuasi)
-const clusters = [...new Set(data.features.map(f => f.properties.cluster))];
-clusters.forEach(cluster => {
-  const opt = document.createElement('option');
-  opt.value = cluster;
-  opt.textContent = cluster;
-  clusterSelect.appendChild(opt);
+// Add "All Crops" at top
+cropSelect.innerHTML = '<option value="Ashanti Region">All Crops</option>';
+crops.forEach(crop => {
+  if (crop && crop !== "") {
+    const opt = document.createElement('option');
+    opt.value = crop;
+    opt.textContent = crop;
+    cropSelect.appendChild(opt);
+  }
 });
+
+// Add default "Ashanti Region" and then unique clusters
+clusterSelect.innerHTML = '<option value="Ashanti Region">Ashanti Region</option>';
+clusters.forEach(cluster => {
+  if (cluster && cluster !== "") {
+    const opt = document.createElement('option');
+    opt.value = cluster;
+    opt.textContent = cluster;
+    clusterSelect.appendChild(opt);
+  }
+});
+
 
 
     clusters.forEach(cluster => {
