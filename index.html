@@ -15,12 +15,16 @@
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500&family=Open+Sans&display=swap" rel="stylesheet" />
 
+  <!-- MiniMap Plugin -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-minimap/dist/Control.MiniMap.min.css" />
+<script src="https://unpkg.com/leaflet-minimap/dist/Control.MiniMap.min.js"></script>
+
 </head>
 <body>
   <div id="sidebar" class="sidebar">
     <div class="sidebar-header">
-      <h2>🌾 Farm Filter</h2>
-      <button id="toggleSidebar">⮜</button>
+      <label for="sizeRange">Farm Size (ha): <span id="sizeValue">0</span></label>
+<input type="range" id="sizeRange" min="0" max="50" value="0" />
     </div>
 
     <div class="filters">
@@ -46,66 +50,57 @@
   <div id="footer-tag">Made by Victor Morton-Bruce</div>
 
   <script>
-    // Base Layers
-    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    });
+// Initialize map focused on Ashanti Region
+const map = L.map('map').setView([6.6, -1.6], 8);
 
-    const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: '&copy; Esri &mdash; Source: Esri, Earthstar Geographics'
-    });
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 18,
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
 
-    const map = L.map('map', {
-      center: [7.9, -1.0],
-      zoom: 7,
-      layers: [satellite]
-    });
+const cropColors = {
+  "Maize": "#f9a825",
+  "Cassava": "#8bc34a",
+  "Cocoa": "#6d4c41",
+  "Rice": "#4fc3f7",
+  "Tomatoes": "#e53935"
+};
 
-    const baseMaps = { "Satellite": satellite, "OpenStreetMap": osm };
-    L.control.layers(baseMaps).addTo(map);
+let farmsLayer;
 
-    // Load GeoJSON
-    let farmLayer;
-   fetch('data/ghana_farms_polygons.geojson')
+// Fetch GeoJSON Data
+fetch('data/ashanti_farms_linear_cluster.geojson')
   .then(response => response.json())
   .then(data => {
-    // Extract unique crop types and regions
-    const crops = [...new Set(data.features.map(f => f.properties.crop))];
-    const regions = [...new Set(data.features.map(f => f.properties.region))];
 
-    // Populate dropdowns dynamically
+    // Extract unique crops and clusters dynamically
+    const crops = [...new Set(data.features.map(f => f.properties.crop))];
+    const clusters = [...new Set(data.features.map(f => f.properties.cluster))];
+
+    // Populate dropdowns
     const cropSelect = document.getElementById('cropSelect');
-    const regionSelect = document.getElementById('regionSelect');
+    const clusterSelect = document.getElementById('regionSelect');
 
     crops.forEach(crop => {
-      const option = document.createElement('option');
-      option.value = crop;
-      option.textContent = crop;
-      cropSelect.appendChild(option);
+      const opt = document.createElement('option');
+      opt.value = crop;
+      opt.textContent = crop;
+      cropSelect.appendChild(opt);
     });
 
-    regions.forEach(region => {
-      const option = document.createElement('option');
-      option.value = region;
-      option.textContent = region;
-      regionSelect.appendChild(option);
+    clusters.forEach(cluster => {
+      const opt = document.createElement('option');
+      opt.value = cluster;
+      opt.textContent = cluster;
+      clusterSelect.appendChild(opt);
     });
 
-    // Define color mapping by crop type
-    const cropColors = {
-      "Maize": "#f9a825",
-      "Cassava": "#8bc34a",
-      "Cocoa": "#6d4c41",
-      "Rice": "#4fc3f7",
-      "Tomatoes": "#e53935"
-    };
-
-    // Add farms to the map
-    const farmsLayer = L.geoJSON(data, {
+    // Add farms to map
+    farmsLayer = L.geoJSON(data, {
       style: feature => ({
         color: '#222',
         weight: 0.8,
-        fillColor: cropColors[feature.properties.crop] || '#999',
+        fillColor: cropColors[feature.properties.crop] || '#ccc',
         fillOpacity: 0.6
       }),
       onEachFeature: (feature, layer) => {
@@ -114,169 +109,66 @@
           <strong>${p.farm_name}</strong><br>
           Farmer: ${p.farmer}<br>
           Crop: ${p.crop}<br>
-          Region: ${p.region}<br>
+          Cluster: ${p.cluster}<br>
           Area: ${p.area_ha} ha
         `);
       }
     }).addTo(map);
 
-    // ✅ Auto-fit to all farms
+    // Auto-fit to all farms
     map.fitBounds(farmsLayer.getBounds());
 
-    // Filtering logic
+    // === FILTERING ===
+    const sizeRange = document.getElementById('sizeRange');
+    const sizeLabel = document.getElementById('sizeValue');
+
     function applyFilters() {
       const selectedCrop = cropSelect.value;
-      const selectedRegion = regionSelect.value;
-      const sizeThreshold = document.getElementById('sizeRange').value;
+      const selectedCluster = clusterSelect.value;
+      const sizeThreshold = parseFloat(sizeRange.value);
+
+      sizeLabel.textContent = sizeThreshold; // update numeric display
 
       farmsLayer.eachLayer(layer => {
         const p = layer.feature.properties;
         const match =
           (selectedCrop === "All Crops" || p.crop === selectedCrop) &&
-          (selectedRegion === "All Regions" || p.region === selectedRegion) &&
+          (selectedCluster === "All Regions" || p.cluster === selectedCluster) &&
           p.area_ha >= sizeThreshold;
 
-        layer.setStyle({ opacity: match ? 1 : 0, fillOpacity: match ? 0.6 : 0 });
+        layer.setStyle({
+          opacity: match ? 1 : 0,
+          fillOpacity: match ? 0.6 : 0
+        });
       });
     }
 
-    // Event listeners
+    // Listeners
     cropSelect.addEventListener('change', applyFilters);
-    regionSelect.addEventListener('change', applyFilters);
-    document.getElementById('sizeRange').addEventListener('input', applyFilters);
+    clusterSelect.addEventListener('change', applyFilters);
+    sizeRange.addEventListener('input', applyFilters);
+
     document.getElementById('resetFilters').addEventListener('click', () => {
       cropSelect.value = "All Crops";
-      regionSelect.value = "All Regions";
-      document.getElementById('sizeRange').value = 0;
+      clusterSelect.value = "All Regions";
+      sizeRange.value = 0;
+      sizeLabel.textContent = "0";
       applyFilters();
     });
   });
- {
-        farmLayer = L.geoJSON(data, {
-         style: function(feature) {
-  return {
-    color: '#222',           // thin dark border
-    weight: 0.8,
-    fillColor: cropColors[feature.properties.crop] || '#ccc',
-    fillOpacity: 0.6
-  };
-}
-,
-          onEachFeature: (feature, layer) => {
-            const p = feature.properties;
-            layer.bindPopup(`
-              <b>${p.farm_name}</b><br>
-              👨🏽‍🌾 <b>Farmer:</b> ${p.farmer}<br>
-              🌱 <b>Crop:</b> ${p.crop}<br>
-              📍 <b>Region:</b> ${p.region}<br>
-              🌾 <b>Area:</b> ${p.area_ha} ha<br>
-              📊 <b>Yield:</b> ${p.yield_tons} tons
-            `);
-          }
-        }).addTo(map);
-        map.fitBounds(farmLayer.getBounds());
+  // Add a minimap inset at bottom-right
+const miniMapLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  minZoom: 0,
+  maxZoom: 13
+});
 
-        populateFilters(data.features);
-        attachFilterEvents(data.features);
-      };
+const miniMap = new L.Control.MiniMap(miniMapLayer, {
+  toggleDisplay: true,
+  minimized: false,
+  position: 'bottomright'
+}).addTo(map);
 
-    function getCropColor(crop) {
-      const colors = {
-        'Maize': '#fbc02d',
-        'Cocoa': '#5d4037',
-        'Rice': '#81c784',
-        'Cassava': '#f5f5f5',
-        'Tomatoes': '#ef5350'
-      };
-      return colors[crop] || '#cccccc';
-    }
+</script>
 
-    function populateFilters(features) {
-      const crops = [...new Set(features.map(f => f.properties.crop))];
-      const regions = [...new Set(features.map(f => f.properties.region))];
-      const cropSelect = document.getElementById('cropSelect');
-      const regionSelect = document.getElementById('regionSelect');
-      const sizeRange = document.getElementById('sizeRange');
-
-      const allAreas = features.map(f => f.properties.area_ha);
-      sizeRange.min = Math.min(...allAreas);
-      sizeRange.max = Math.max(...allAreas);
-
-      crops.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c;
-        opt.textContent = c;
-        cropSelect.appendChild(opt);
-      });
-      regions.forEach(r => {
-        const opt = document.createElement('option');
-        opt.value = r;
-        opt.textContent = r;
-        regionSelect.appendChild(opt);
-      });
-    }
-
-    function attachFilterEvents(allFeatures) {
-      const cropSelect = document.getElementById('cropSelect');
-      const regionSelect = document.getElementById('regionSelect');
-      const sizeRange = document.getElementById('sizeRange');
-      const resetBtn = document.getElementById('resetFilters');
-
-      function filterData() {
-        const cropVal = cropSelect.value;
-        const regionVal = regionSelect.value;
-        const sizeVal = parseInt(sizeRange.value);
-
-        if (farmLayer) map.removeLayer(farmLayer);
-
-        const filtered = allFeatures.filter(f => {
-          const p = f.properties;
-          return (!cropVal || p.crop === cropVal) &&
-                 (!regionVal || p.region === regionVal) &&
-                 (!sizeVal || p.area_ha >= sizeVal);
-        });
-
-        farmLayer = L.geoJSON({ type: 'FeatureCollection', features: filtered }, {
-          style: f => ({
-            color: '#2b2b2b',
-            weight: 1,
-            fillOpacity: 0.75,
-            fillColor: getCropColor(f.properties.crop)
-          }),
-          onEachFeature: (f, l) => {
-            const p = f.properties;
-            l.bindPopup(`
-              <b>${p.farm_name}</b><br>
-              👨🏽‍🌾 <b>Farmer:</b> ${p.farmer}<br>
-              🌱 <b>Crop:</b> ${p.crop}<br>
-              📍 <b>Region:</b> ${p.region}<br>
-              🌾 <b>Area:</b> ${p.area_ha} ha<br>
-              📊 <b>Yield:</b> ${p.yield_tons} tons
-            `);
-          }
-        }).addTo(map);
-
-        if (filtered.length > 0) {
-          map.fitBounds(farmLayer.getBounds());
-        }
-      }
-
-      cropSelect.addEventListener('change', filterData);
-      regionSelect.addEventListener('change', filterData);
-      sizeRange.addEventListener('input', filterData);
-      resetBtn.addEventListener('click', () => {
-        cropSelect.value = '';
-        regionSelect.value = '';
-        sizeRange.value = sizeRange.min;
-        filterData();
-      });
-    }
-
-    // Sidebar toggle
-    document.getElementById('toggleSidebar').addEventListener('click', () => {
-      document.getElementById('sidebar').classList.toggle('collapsed');
-    });
-
-  </script>
 </body>
 </html>
