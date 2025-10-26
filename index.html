@@ -44,6 +44,7 @@
       <button id="resetFilters" class="reset-btn">Reset Filters</button>
     </div>
   </div>
+<button id="toggleSidebar">☰ Filters</button>
 
   <div id="map"></div>
 
@@ -185,6 +186,14 @@ const miniMap = new L.Control.MiniMap(miniMapLayer, {
   minimized: false,
   position: 'bottomright'
 }).addTo(map);
+// Sidebar toggle for mobile
+const sidebar = document.getElementById('sidebar');
+const toggleBtn = document.getElementById('toggleSidebar');
+
+toggleBtn.addEventListener('click', () => {
+  sidebar.classList.toggle('active');
+  toggleBtn.textContent = sidebar.classList.contains('active') ? '× Close' : '☰ Filters';
+});
 
 </script>
 
